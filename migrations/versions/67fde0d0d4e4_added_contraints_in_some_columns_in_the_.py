@@ -1,8 +1,8 @@
-"""create tables
+"""added contraints in some columns in the models
 
-Revision ID: 1f33a80cc705
+Revision ID: 67fde0d0d4e4
 Revises: 813c259bdf58
-Create Date: 2025-12-11 17:30:47.372064
+Create Date: 2025-12-12 14:31:30.258436
 
 """
 from typing import Sequence, Union
@@ -12,9 +12,8 @@ import sqlalchemy as sa
 import sqlmodel
 
 
-
 # revision identifiers, used by Alembic.
-revision: str = '1f33a80cc705'
+revision: str = '67fde0d0d4e4'
 down_revision: Union[str, None] = '813c259bdf58'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +25,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('release_date', sa.Date(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('user',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -34,7 +34,8 @@ def upgrade() -> None:
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
     )
     op.create_table('card',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -44,7 +45,8 @@ def upgrade() -> None:
     sa.Column('text', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('collection_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['collection_id'], ['collection.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('deck',
     sa.Column('id', sa.Integer(), nullable=False),

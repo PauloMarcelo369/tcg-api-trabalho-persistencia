@@ -35,19 +35,19 @@ class DeckFormat(str, Enum):
 class DeckCardLink(SQLModel, table=True):
     deck_id: Optional[int] = Field(default=None, foreign_key="deck.id", primary_key=True)
     card_id: Optional[int] = Field(default=None, foreign_key="card.id", primary_key=True)
-    qty: int = Field(default=1)
+    qty: int = Field(default=1, ge=1, le=3)
 
 # aqui temos a coleção em que as cartas vem
 class Collection(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name : str = Field(nullable=False)
+    name : str = Field(nullable=False, unique=True)
     release_date: date = Field(nullable=False)
     cards: List["Card"] = Relationship(back_populates="collection")
 
 #aqui temos a representação do card proprieamente dito
 class Card(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name : str = Field(nullable=False)
+    name : str = Field(nullable=False, unique=True)
     type: CardType = Field(nullable=False)
     rarity: CardRarity = Field(nullable=False)
     text: Optional[str] = Field(default=None)
@@ -59,7 +59,7 @@ class Card(SQLModel, table=True):
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name : str = Field(nullable=False)
-    email : str = Field(nullable=False)
+    email : str = Field(nullable=False, unique=True)
     password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.now)
     decks : List["Deck"] = Relationship(back_populates="owner")
