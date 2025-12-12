@@ -1,6 +1,10 @@
-def main():
-    print("Hello from trabalho-2-persistencia!")
+from fastapi import FastAPI
+from routes import decks
 
+app = FastAPI()
 
-if __name__ == "__main__":
-    main()
+@app.get("/")
+def read_root():
+    return {"message": "Tcg API is running"}
+
+app.include_router(decks.router)

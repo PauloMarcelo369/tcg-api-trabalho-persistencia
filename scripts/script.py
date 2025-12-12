@@ -1,6 +1,6 @@
 from sqlmodel import Session
 from datetime import datetime, date
-from src.database import engine
+from database import engine
 
 from models.models import (
     User, Deck, Card, Collection,

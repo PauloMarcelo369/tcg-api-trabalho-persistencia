@@ -2,7 +2,6 @@ from typing import List, Optional
 from sqlmodel import Field, Relationship, SQLModel
 from datetime import date, datetime
 from enum import Enum
-from pydantic import EmailStr
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
