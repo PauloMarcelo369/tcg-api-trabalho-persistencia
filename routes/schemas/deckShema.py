@@ -20,6 +20,11 @@ class DeckUpdate(SQLModel):
     name: Optional[str] = None
     format: Optional[DeckFormat] = None
 
+class DeckCardsLinkRead(SQLModel):
+    deck_id : int
+    card_id : int
+    qty : int
+
 class DeckWithCardsRead(SQLModel):
     id: int
     name: str
