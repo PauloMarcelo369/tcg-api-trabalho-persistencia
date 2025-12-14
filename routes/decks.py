@@ -44,7 +44,6 @@ def create_deck(data: DeckCreate, session: Session = Depends(get_session)):
 
 
 
-
 @router.delete("/{deck_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_deck_by_id(deck_id: int, session: Session = Depends(get_session)):
     """Delete a Deck"""
@@ -161,13 +160,6 @@ def delete_card_in_deck(
         )
 
 
-
-
-
-    
-
-
-
 @router.put("/{deck_id}", response_model=DeckRead, status_code=status.HTTP_200_OK)
 def put(deck_id : int, updated_deck : DeckUpdate,  session: Session = Depends(get_session)):
     deck = session.get(Deck, deck_id)
@@ -210,9 +202,10 @@ def list_decks(
 
 
 
-
-@router.get("/stats/decks-by-format",status_code=status.HTTP_200_OK)
-def decks_by_format(session: Session = Depends(get_session)):
+@router.get("/stats/decks-by-format", status_code=status.HTTP_200_OK)
+def decks_by_format(
+    session: Session = Depends(get_session)
+):
     try:
         rows = session.exec(
             select(
