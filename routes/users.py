@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlmodel import Session, select
 from database import get_session
@@ -8,10 +9,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 from pydantic import ValidationError
 
-
+#cria novo usuario
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(data: UserCreate, session: Session = Depends(get_session)):
-    """Create a new user"""
     existing = session.exec(select(User).where(User.email == data.email)).first()
 
     if existing:
@@ -30,14 +30,20 @@ def create_user(data: UserCreate, session: Session = Depends(get_session)):
     except Exception:
         raise HTTPException(status_code=500, detail="Erro ao criar usuário!")
 
-
+#retorna usuario pelo id
 @router.get("/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK)
 def get_user_by_id(user_id: int, session: Session = Depends(get_session)):
-    """Get User by ID"""
     user = session.get(User, user_id)
     if (not user):
         raise HTTPException(404, f"Usuário com ID {user_id} não existe!")
     return user
+
+
+#lista todos os usuarios
+@router.get("/", response_model=List[UserRead], status_code=status.HTTP_200_OK)
+def list_users(session: Session = Depends(get_session)):
+    users = session.exec(select(User)).all()
+    return users
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
