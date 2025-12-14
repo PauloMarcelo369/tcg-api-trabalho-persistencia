@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import decks, users
+from routes import decks, users, cards, collections
 
 app = FastAPI()
 
@@ -9,3 +9,5 @@ def read_root():
 
 app.include_router(decks.router)
 app.include_router(users.router)
+app.include_router(cards.router)
+app.include_router(collections.router)

@@ -2,6 +2,7 @@ from typing import Optional, List
 from sqlmodel import SQLModel
 from datetime import datetime
 from models.models import DeckFormat
+from routes.schemas.cardSchema import CardRead
 
 class DeckBase(SQLModel):
     name : str
@@ -18,3 +19,14 @@ class DeckRead(DeckBase):
 class DeckUpdate(SQLModel):
     name: Optional[str] = None
     format: Optional[DeckFormat] = None
+
+class DeckCardsLinkRead(SQLModel):
+    deck_id : int
+    card_id : int
+    qty : int
+
+class DeckWithCardsRead(SQLModel):
+    id: int
+    name: str
+    format: DeckFormat
+    cards: List[CardRead]
