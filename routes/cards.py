@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
+from sqlalchemy import func
 from database import get_session
-from models.models import Card
+from models.models import Card, Collection
 from routes.schemas.cardSchema import CardCreate, CardRead, CardUpdate
 from pydantic import ValidationError
 
@@ -110,6 +112,108 @@ def search_card_by_name(
         ).all()
 
         return cards
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
+
+
+@router.get("/collection/{collection_id}", response_model=list[CardRead], status_code=status.HTTP_200_OK)
+def get_cards_by_collection(
+    collection_id: int,
+    skip: int = 0,
+    limit: int = Query(10, le=50),
+    session: Session = Depends(get_session)
+):
+    """Get all cards from a specific collection"""
+    collection = session.get(Collection, collection_id)
+    if not collection:
+        raise HTTPException(404, f"Collection com ID {collection_id} não existe!")
+
+    try:
+        cards = session.exec(
+            select(Card)
+            .where(Card.collection_id == collection_id)
+            .offset(skip)
+            .limit(limit)
+        ).all()
+
+        return cards
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
+
+
+@router.get("/stats/by-collection", status_code=status.HTTP_200_OK)
+def cards_per_collection_stats(session: Session = Depends(get_session)):
+    """Get statistics of cards count per collection"""
+    try:
+        rows = session.exec(
+            select(
+                Collection.name,
+                func.count(Card.id).label("total_cards")
+            )
+            .join(Card)
+            .group_by(Collection.id, Collection.name)
+            .order_by(func.count(Card.id).desc())
+        ).all()
+
+        return [
+            {
+                "collection_name": row[0],
+                "total_cards": row[1],
+            }
+            for row in rows
+        ]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
+
+
+@router.get("/stats/by-rarity", status_code=status.HTTP_200_OK)
+def cards_by_rarity_stats(session: Session = Depends(get_session)):
+    """Get statistics of cards count by rarity"""
+    try:
+        rows = session.exec(
+            select(
+                Card.rarity,
+                func.count(Card.id).label("total_cards")
+            )
+            .group_by(Card.rarity)
+            .order_by(func.count(Card.id).desc())
+        ).all()
+
+        return [
+            {
+                "rarity": row[0],
+                "total_cards": row[1],
+            }
+            for row in rows
+        ]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
+
+
+@router.get("/stats/by-type", status_code=status.HTTP_200_OK)
+def cards_by_type_stats(session: Session = Depends(get_session)):
+    """Get statistics of cards count by type"""
+    try:
+        rows = session.exec(
+            select(
+                Card.type,
+                func.count(Card.id).label("total_cards")
+            )
+            .group_by(Card.type)
+            .order_by(func.count(Card.id).desc())
+        ).all()
+
+        return [
+            {
+                "type": row[0],
+                "total_cards": row[1],
+            }
+            for row in rows
+        ]
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
