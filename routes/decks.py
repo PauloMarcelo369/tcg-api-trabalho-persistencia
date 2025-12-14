@@ -7,7 +7,12 @@ from routes.schemas.deckShema import DeckCreate, DeckRead, DeckUpdate, DeckWithC
 from pydantic import ValidationError
 
 
-router = APIRouter(prefix="/decks", tags=["Decks"])
+router = APIRouter(
+    prefix="/decks", 
+    tags=["Decks"]
+)
+
+
 
 @router.post("/", response_model=DeckRead, status_code=status.HTTP_201_CREATED)
 def create_deck(data: DeckCreate, session: Session = Depends(get_session)):
@@ -38,6 +43,23 @@ def create_deck(data: DeckCreate, session: Session = Depends(get_session)):
         raise HTTPException(status_code=500, detail="Erro ao criar deck!")
 
 
+
+
+@router.delete("/{deck_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_deck_by_id(deck_id: int, session: Session = Depends(get_session)):
+    """Delete a Deck"""
+    deck = session.get(Deck, deck_id)
+    if (not deck):
+        raise HTTPException(404, f"Deck com ID {deck_id} não existe!")
+
+    try:
+        session.delete(deck)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(400, f"Houve um problema ao deletar o Deck com ID {deck_id}!")
+    
+
 @router.post("/{deck_id}/cards/{card_id}", response_model=DeckCardsLinkRead, status_code=status.HTTP_201_CREATED)
 def add_card_in_deck(
     deck_id: int,
@@ -62,7 +84,7 @@ def add_card_in_deck(
 
     try:
         if card_in_deck:
-            if card_in_deck.qty >= 3:
+            if card_in_deck.qty == 3:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Esta carta já atingiu o limite máximo permitido no deck"
@@ -95,21 +117,56 @@ def add_card_in_deck(
             detail="Erro ao tentar adicionar card ao deck"
         )
 
-
-@router.delete("/{deck_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_deck_by_id(deck_id: int, session: Session = Depends(get_session)):
-    """Delete a Deck"""
+@router.delete("/{deck_id}/cards/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_card_in_deck(
+    deck_id: int,
+    card_id: int,
+    session: Session = Depends(get_session),
+):
     deck = session.get(Deck, deck_id)
-    if (not deck):
+    if not deck:
         raise HTTPException(404, f"Deck com ID {deck_id} não existe!")
 
+    card = session.get(Card, card_id)
+    if not card:
+        raise HTTPException(404, f"Card com ID {card_id} não existe!")
+
+    card_in_deck = session.exec(
+        select(DeckCardLink)
+        .where(
+            DeckCardLink.deck_id == deck_id,
+            DeckCardLink.card_id == card_id,
+        )
+    ).first()
+
     try:
-        session.delete(deck)
+        if not card_in_deck:
+           raise HTTPException(404, "card não existe no deck")
+        
+        if card_in_deck.qty > 1:
+            card_in_deck.qty = card_in_deck.qty - 1
+            session.add(card_in_deck)
+        else:
+            session.delete(card_in_deck)
+
         session.commit()
-    except Exception as e:
+
+    except HTTPException:
+        raise
+    except Exception:
         session.rollback()
-        raise HTTPException(400, f"Houve um problema ao deletar o Deck com ID {deck_id}!")
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao tentar remover card ao deck"
+        )
+
+
+
+
+
     
+
+
 
 @router.put("/{deck_id}", response_model=DeckRead, status_code=status.HTTP_200_OK)
 def put(deck_id : int, updated_deck : DeckUpdate,  session: Session = Depends(get_session)):
@@ -134,6 +191,8 @@ def put(deck_id : int, updated_deck : DeckUpdate,  session: Session = Depends(ge
         raise HTTPException(400, f"Não foi posssível atualizar Deck com ID {deck_id}!")
     
 
+
+
 @router.get("/", response_model=list[DeckRead], status_code=status.HTTP_200_OK)
 def list_decks( 
     skip: int = 0,
@@ -148,6 +207,7 @@ def list_decks(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
+
 
 
 
@@ -175,6 +235,7 @@ def decks_by_format(session: Session = Depends(get_session)):
     
 
 
+
 @router.get("/average-cards-per-deck", status_code=status.HTTP_200_OK)
 def average_cards_per_deck(session: Session = Depends(get_session)):
     try:
@@ -194,6 +255,7 @@ def average_cards_per_deck(session: Session = Depends(get_session)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Houve um erro interno no servidor")
     
+
 
 
 @router.get("/{deck_id}", response_model=DeckRead,status_code=status.HTTP_200_OK)
