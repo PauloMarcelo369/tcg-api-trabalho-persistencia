@@ -12,14 +12,12 @@ router = APIRouter(
     tags=["Decks"]
 )
 
-
-
 @router.post("/", response_model=DeckRead, status_code=status.HTTP_201_CREATED)
 def create_deck(data: DeckCreate, session: Session = Depends(get_session)):
     """Create a new user deck"""
     existing = session.exec(
         select(Deck).where(
-            (Deck.name == data.name) & (Deck.user_id == data.user_id)
+            Deck.name == data.name, Deck.user_id == data.user_id
         )
     ).first()
 
@@ -44,7 +42,6 @@ def create_deck(data: DeckCreate, session: Session = Depends(get_session)):
 
 
 
-
 @router.delete("/{deck_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_deck_by_id(deck_id: int, session: Session = Depends(get_session)):
     """Delete a Deck"""
@@ -66,6 +63,7 @@ def add_card_in_deck(
     card_id: int,
     session: Session = Depends(get_session),
 ):
+    """add card in deck"""
     deck = session.get(Deck, deck_id)
     if not deck:
         raise HTTPException(404, f"Deck com ID {deck_id} não existe!")
@@ -123,6 +121,7 @@ def delete_card_in_deck(
     card_id: int,
     session: Session = Depends(get_session),
 ):
+    """delete card in deck"""
     deck = session.get(Deck, deck_id)
     if not deck:
         raise HTTPException(404, f"Deck com ID {deck_id} não existe!")
@@ -161,15 +160,9 @@ def delete_card_in_deck(
         )
 
 
-
-
-
-    
-
-
-
 @router.put("/{deck_id}", response_model=DeckRead, status_code=status.HTTP_200_OK)
 def put(deck_id : int, updated_deck : DeckUpdate,  session: Session = Depends(get_session)):
+    """update a existing deck"""
     deck = session.get(Deck, deck_id)
 
     if (not deck):
@@ -199,6 +192,7 @@ def list_decks(
     limit: int = 10,
     session: Session = Depends(get_session),
 ):
+    """list all decks"""
     try:
         decks = session.exec(
             select(Deck).offset(skip).limit(limit)
@@ -210,9 +204,11 @@ def list_decks(
 
 
 
-
-@router.get("/stats/decks-by-format",status_code=status.HTTP_200_OK)
-def decks_by_format(session: Session = Depends(get_session)):
+@router.get("/stats/decks-by-format", status_code=status.HTTP_200_OK)
+def decks_by_format(
+    session: Session = Depends(get_session)
+):
+    """decks grouped by format"""
     try:
         rows = session.exec(
             select(
@@ -238,6 +234,7 @@ def decks_by_format(session: Session = Depends(get_session)):
 
 @router.get("/average-cards-per-deck", status_code=status.HTTP_200_OK)
 def average_cards_per_deck(session: Session = Depends(get_session)):
+    """Average cards per deck"""
     try:
         subq = (
             select(
@@ -274,6 +271,7 @@ def search_deck_by_name(
     limit: int = Query(10, le=50),
     session: Session = Depends(get_session)
 ):
+    """search deck by partial name"""
     try:
         decks = session.exec(
             select(Deck)
@@ -290,6 +288,7 @@ def search_deck_by_name(
 
 @router.get("/{deck_id}/with-cards", response_model=DeckWithCardsRead, status_code=status.HTTP_200_OK)
 def get_deck_with_cards(deck_id : int, session: Session = Depends(get_session)):
+    """get deck informations and their respective cards"""
     deck = session.exec(
         select(Deck)
         .where(Deck.id == deck_id)
@@ -301,8 +300,10 @@ def get_deck_with_cards(deck_id : int, session: Session = Depends(get_session)):
 
     return deck
 
+
 @router.get("/{deck_id}/cards/count", status_code=status.HTTP_200_OK)
 def count_cards_in_deck(deck_id : int,session : Session = Depends(get_session)):
+    """count the total number of cards in the deck."""
     try:
         count = session.exec(
             select(func.sum(DeckCardLink.qty))
